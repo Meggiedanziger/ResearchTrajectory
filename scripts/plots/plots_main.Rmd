@@ -1,0 +1,746 @@
+---
+title: 'Plots main part manuscript'
+indent: yes
+output: bookdown::pdf_document2
+# output: bookdown::word_document2
+latex_engine: xelatex #or lualatex
+keep_tex: true
+toc: false
+fig_caption: yes
+linestretch: 1.5
+fontsize: 11pt
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries, echo = FALSE, message = FALSE, warning = FALSE}
+library(bookdown)
+library(knitr)
+library(tidyverse)
+library(cowplot)
+library(grid)
+library(gridExtra)
+library(ggpubr)
+library(ggplot2)
+```
+
+```{r data, include = FALSE, cache = FALSE}
+load("exploratory_data_sig.RData")
+load("exploratory_data_sesoi.RData")
+load("all_outcomes.RData")
+load("original_ES_distribution.RData")
+load("standard_data_after_replication.RData")
+load("sesoi_data_after_replication.RData")
+```
+
+```{r results data, echo = FALSE, message = FALSE}
+# data for results section main outcomes
+res_data <-
+  res %>%
+  filter(init_sample_size == 10) %>%
+  filter(trajectory != "SESOI-Standard") %>%
+  filter(trajectory != "Standard-SESOI") %>%
+  filter(SESOI == 0.5 | SESOI == 1.0) %>%
+  filter(is.na(pval_threshold) | pval_threshold == 0.05)
+```
+
+```{r ES distribution, echo = FALSE, results = "hide"}
+
+abs(meta$yi)
+
+min(abs(meta$yi))
+max(abs(meta$yi))
+mean(abs(meta$yi))
+median(abs(meta$yi))
+```
+
+```{r trajectory, echo = FALSE, message = FALSE, out.width = '95%', fig.align = 'center', fig.cap = '\\textsf{\\textbf{Preclinical research trajectory and transition rates.} \\textbf{a}, Along the trajectory, two decisions have to be made. DECISION 1: Which experiments should move from exploration to confirmation? DECISION 2: How should the sample size for a confirmatory study (i.e. within-lab replication) be estimated? The yellow and blue panels display the decision criteria and approaches to estimate the sample size along the two  tajectories that were compared in this study (yellow = Standard; blue = SESOI). \\textbf{b}, Distribution of empirical effect sizes (\\textit{n} = 2729) extracted from Bonapersona \\textit{et al}., 2021. \\textbf{c-e}, Exploratory effect sizes (\\textit{n} = 9958). The shaded bars show the effect sizes that were detected using one of the two decision criteria. \\textbf{c}, Yellow shaded bars indicate those effect sizes that were identified for confirmation using the conventional significance threshold ($\\alpha$ = .05). \\textbf{d}, Dark blue shaded bars indicate effect sizes that were selected using a SESOI of 0.5. \\textbf{e}, Light blue shaded bars indicate effect sizes that were selected using a SESOI of 1.0. Note that in panels \\textbf{b-e} values $>$ 10 were removed in order to display the distribution.}'}
+
+triangle <-
+  data.frame(x = c(7, 7, 13),
+             y = c(2.47, 1.5, 1.5))
+
+triangle2 <- 
+  data.frame(x2 = c(15, 15, 21),
+             y2 = c(2.47, 1.5, 1.5))
+
+trajectory <- 
+  ggplot() +
+  geom_rect(aes(xmin = 0, xmax = 28,
+                ymin = 0, ymax = 3.5),
+            fill = "white") +
+  geom_segment(aes(x = 0, xend = 28,
+                   y = 1, yend = 1),
+               size = .4,
+               arrow = arrow(length = unit(0.4,"cm")),
+               color = "grey34") +
+  xlab("Preclinical trajectory") +
+  geom_rect(aes(xmin = 7, xmax = 13,
+                ymin = -0.5, ymax = 0.5),
+            fill = "white",
+            color = "grey34",
+            size = 0.3) +
+  annotate("text",
+           x = 10, y = 0,
+           label = "DECISION 1",
+           color = "black",
+           size = 3) +
+  geom_rect(aes(xmin = 15, xmax = 21,
+                ymin = -0.5, ymax = 0.5),
+            fill = "white",
+            color = "grey34",
+            size = 0.3) +
+  annotate("text",
+           x = 18, y = 0,
+           label = "DECISION 2",
+           color = "black",
+           size = 3) +
+  geom_rect(aes(xmin = 0, xmax = 4,
+                ymin = 2, ymax = 3),
+            fill = "grey34",
+            color = "grey34") +
+  annotate("text",
+           x = 2.05, y = 2.5,
+           label = "EXPLORATORY \nSTUDY",
+           color = "white",
+           size = 2.5) +
+  geom_rect(aes(xmin = 7, xmax = 13,
+                ymin = 2.5, ymax = 3.5),
+            fill = "#E69F00",
+            color = "white") +
+  annotate("text",
+           x = 10, y = 3,
+           label = "Conventional \nsignificance threshold",
+           color = "black",
+           size = 2.8) +
+  geom_rect(aes(xmin = 7, xmax = 13,
+                ymin = 1.5, ymax = 2.5),
+            fill = "#0072B2",
+            color = "white") +
+  geom_polygon(aes(x = x, y = y),
+               data = triangle, 
+               fill = "#adcee6") +
+  annotate("text",
+           x = 10, y = 2,
+           label = "SESOI within \nconfidence interval",
+           color = "black",
+           size = 2.8) +
+  geom_segment(aes(x = 4, xend = 7,
+                   y = 2.5, yend = 3),
+               size = 0.3,
+               arrow = arrow(length = unit(0.2,"cm")),
+               color = "grey34") +
+  geom_segment(aes(x = 4, xend = 7,
+                   y = 2.5, yend = 2),
+               size = 0.3,
+               arrow = arrow(length = unit(0.2,"cm")),
+               color = "grey34") +
+  geom_rect(aes(xmin = 15, xmax = 21,
+                ymin = 2.5, ymax = 3.5),
+            fill = "#E69F00", 
+            color = "white") +
+  annotate("text",
+           x = 18, y = 3,
+           label = "Exploratory \neffect size",
+           color = "black",
+           size = 2.8) +
+  geom_rect(aes(xmin = 15, xmax = 21,
+                ymin = 1.5, ymax = 2.5),
+            fill = "#0072B2", 
+            color = "white") +
+  geom_polygon(aes(x = x2, y = y2),
+               data = triangle2,
+               fill = "#adcee6") +
+  annotate("text",
+           x = 18, y = 2,
+           label = "SESOI",
+           color = "black",
+           size = 2.8) +
+  geom_segment(aes(x = 13, xend = 15,
+                   y = 3, yend = 3),
+               size = 0.3,
+               arrow = arrow(length = unit(0.2,"cm")),
+               color = "grey34") +
+  geom_segment(aes(x = 13, xend = 15,
+                   y = 2, yend = 2),
+               size = 0.3,
+               arrow = arrow(length = unit(0.2,"cm")),
+               color = "grey34") +
+  geom_rect(aes(xmin = 24.1, xmax = 28.1,
+                ymin = 2, ymax = 3),
+            fill = "grey34",
+            color = "grey34") +
+  annotate("text",
+           x = 26.15, y = 2.5,
+           label = "CONFIRMATORY \nSTUDY",
+           color = "white",
+           size = 2.5) +
+  geom_segment(aes(x = 21, xend = 24,
+                   y = 3, yend = 2.5),
+               size = 0.3,
+               arrow = arrow(length = unit(0.2,"cm")),
+               color = "grey34") +
+  geom_segment(aes(x = 21, xend = 24,
+                   y = 2, yend = 2.5),
+               size = 0.3,
+               arrow = arrow(length = unit(0.2,"cm")),
+               color = "grey34") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks = element_blank(),
+    axis.line = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.title.x = element_text(size = 11),
+    axis.title.y = element_blank(),
+    legend.text = element_text(size = 12),
+    legend.title =  element_blank(),
+    panel.border = element_blank(),
+    text = element_text(colour = "black"))
+
+meta_small <-
+  meta %>% 
+  filter(abs(yi) <= 10)
+
+original_ES_distribution <- 
+  ggplot(meta_small, aes(x = abs(yi))) + 
+  geom_histogram(bins = 70, 
+                 color = "black", 
+                 size = 0.1,
+                 fill = "white") +
+  # labs(x = expression(paste("Hedges' g ", italic("(log scale)"))),
+  #      y = "Number of effect sizes") +
+  # scale_x_continuous(trans = "pseudo_log",
+  #                    breaks = c(0, 0.2, 0.5, 0.9, 1.5, 3 ,7 , 20)) + 
+ labs(x = expression(paste("Empirical effect sizes (Hedges' ", italic("g"), ") ")),
+       y = "Frequency") +
+  theme_cowplot(line_size = 0.3) +
+  theme(axis.title.x = element_text(size = 8)) +
+  theme(axis.title.y = element_text(size = 8)) +
+  theme(axis.text.x = element_text(size = 7, colour = "black")) +
+  theme(axis.text.y = element_text(size = 7, colour = "black"))
+
+# original_ES_distribution
+
+exploratory_data_sig_10 <-
+  exploratory_data_sig %>%
+  filter(init_sample_size == 10) %>% 
+  filter(pval_threshold == 0.05) %>% 
+  filter(hedges <= 10)
+
+exploratory_data_sig_10_pos <-
+  exploratory_data_sig %>%
+  filter(init_sample_size == 10) %>% 
+  filter(pval_threshold == 0.05) %>% 
+  filter(hedges <= 10) %>% 
+  filter(hedges > 0) %>%
+  filter(selection == 1)
+
+# create labels for panels b, c, d
+label_sig <- grobTree(textGrob("Significance threshold = 0.05", 
+                      x = 0.26,  y = 0.8, hjust = 0,
+                      gp = gpar(fontsize = 7.5)))
+
+label_sesoi_0.5 <- grobTree(textGrob("SESOI = 0.5", 
+                            x = 0.3,  y = 0.8, hjust = 0,
+                            gp = gpar(fontsize = 7.5)))
+
+label_sesoi_1.0 <- grobTree(textGrob("SESOI = 1.0", 
+                            x = 0.3,  y = 0.8, hjust = 0,
+                            gp = gpar(fontsize = 7.5)))
+
+ES_histrogram_selected_sig <-
+  ggplot(data = exploratory_data_sig_10,
+         aes(x = hedges)) +
+  geom_histogram(bins = 70, color = "black", size = 0.1,
+                 fill = "white") +
+  geom_histogram(data = exploratory_data_sig_10_pos,
+                 aes(x = hedges), 
+                 bins = 70, color = "black", size = 0.1,
+                 fill = "#E69F00") +
+  labs(x = expression(paste("Exploratory effect sizes (Hedges' ", italic("g"), ") ")),
+       y = "Frequency") +
+  theme_cowplot(line_size = 0.3) +
+  theme(axis.title.x = element_text(size = 8)) +
+  theme(axis.title.y = element_text(size = 8)) +
+  theme(axis.text.x = element_text(size = 7, colour = "black")) +
+  theme(axis.text.y = element_text(size = 7, colour = "black")) +
+  annotation_custom(label_sig)
+
+# ES_histrogram_selected_sig
+
+exploratory_data_sesoi_10 <-
+  exploratory_data_sesoi %>%
+  filter(init_sample_size == 10) %>% 
+  filter(SESOI == 0.5) %>% 
+  filter(hedges <= 10)
+
+exploratory_data_sesoi_10_pos <-
+  exploratory_data_sesoi %>%
+  filter(init_sample_size == 10) %>% 
+  filter(SESOI == 0.5) %>% 
+  filter(hedges <= 10) %>% 
+  filter(hedges > 0) %>%
+  filter(selection == 1)
+
+ES_histrogram_selected_sesoi <-
+  ggplot(data = exploratory_data_sesoi_10,
+         aes(x = hedges)) +
+  geom_histogram(bins = 70, color = "black", size = 0.1,
+                 fill = "white") +
+  geom_histogram(data = exploratory_data_sesoi_10_pos,
+                 aes(x = hedges), 
+                 bins = 70, color = "black", size = 0.1,
+                 fill = "#0072B2") +
+  labs(x = expression(paste("Exploratory effect sizes (Hedges' ", italic("g"), ") ")),
+       y = "Frequency") +
+  theme_cowplot(line_size = 0.3) +
+  theme(axis.title.x = element_text(size = 8)) +
+  theme(axis.title.y = element_text(size = 8)) +
+  theme(axis.text.x = element_text(size = 7, colour = "black")) +
+  theme(axis.text.y = element_text(size = 7, colour = "black")) +
+  annotation_custom(label_sesoi_0.5)
+
+# ES_histrogram_selected_sesoi
+
+exploratory_data_sesoi_10_pos_1.0 <-
+  exploratory_data_sesoi %>%
+  filter(init_sample_size == 10) %>%
+  filter(SESOI == "1.0") %>%
+  filter(hedges <= 10) %>% 
+  filter(hedges > 0) %>%
+  filter(selection == 1)
+
+ES_histrogram_selected_sesoi_1.0 <-
+  ggplot(data = exploratory_data_sesoi_10,
+         aes(x = hedges)) +
+  geom_histogram(bins = 70, color = "black", size = 0.1,
+                 fill = "white") +
+  geom_histogram(data = exploratory_data_sesoi_10_pos_1.0,
+                 aes(x = hedges), 
+                 bins = 70, color = "black", size = 0.1,
+                 fill = "#adcee6") +
+  labs(x = expression(paste("Exploratory effect sizes (Hedges' ", italic("g"), ") ")),
+       y = "Frequency") +
+  theme_cowplot(line_size = 0.3) +
+  theme(axis.title.x = element_text(size = 8)) +
+  theme(axis.title.y = element_text(size = 8)) +
+  theme(axis.text.x = element_text(size = 7, colour = "black")) +
+  theme(axis.text.y = element_text(size = 7, colour = "black")) +
+  annotation_custom(label_sesoi_1.0)
+
+# ES_histrogram_selected_sesoi_1.0
+
+ggdraw(xlim = c(0, 2),
+       ylim = c(0, 3)) +
+  draw_plot(original_ES_distribution, 0.1, .84, .8, .93) +
+  draw_plot(ES_histrogram_selected_sig, 1.1, .84, .8, .93) +
+  draw_plot(ES_histrogram_selected_sesoi,  0.1, 0, .8, .93) +
+  draw_plot(ES_histrogram_selected_sesoi_1.0, 1.1, 0, .8, .93) +
+  draw_plot(trajectory, 0, 1.7, 2, 1.3, scale = 0.93) +
+draw_plot_label(c("a", "b", "c", "d", "e"),
+                c(0, 0, 1, 0, 1),
+                c(3, 1.77, 1.77, .93, .93),
+                size = 8.5)
+
+```
+
+```{r results1, echo = FALSE, message = FALSE, out.width = '95%', fig.align = 'center', fig.cap = '\\textsf{\\textbf{Sample sizes in confirmation and significant effect sizes after replication.} \\textbf{a}, Number of animals needed in the confirmatory study. In the Standard trajectory, sample sizes are low ($n_{rep}$ = 8.08 $\\pm$ 4.05), as they are based on large exploratory effect sizes. Error bars represent standard deviations. In case of trajectories using a SESOI, the number of animals is fixed. Using a SESOI of 0.5 results in $n_{rep}$ = 23, whereas a SESOI of 1.0 achieves a sample size comparable to those in the Standard trajectory ($n_{rep}$ = 7). All sample sizes displayed and reported in the text are the number of animals needed in \\textit{each} group (control and intervention). \\textbf{b}, The histogram displays the distribution of sampled effect sizes (\\textit{n} = 9875, values $>$ 5 were removed for better display), that constituted our underlying true effect sizes in the simulation. Shaded bars indicate which underlying effect sizes were detected in the two-stage process. Dark blue shaded bars represent effect sizes that were detected across the SESOI trajectory employing a SESOI of 0.5. Light blue bars represent effect sizes that were detected employing a SESOI of 1.0. Yellow shaded bars indicate effect sizes that were detected across the Standard trajectory. As the histogram illustrates, using the Standard trajectory for detection is not efficient as it overlooks numerous potentially meaningful effects.}'}
+
+# add column that combines trajectory and SESOI
+res_data$traject_SESOI <-
+  interaction(res_data$trajectory, res_data$SESOI)
+
+plot_data_N <-
+  res_data %>%
+  filter(!(trajectory == "Standard" & SESOI != 0.5))
+
+plot_N <-
+  ggplot(data = plot_data_N,
+         aes(x = factor(traject_SESOI),
+             y = mean_N,
+             fill = factor(traject_SESOI))) +
+  geom_bar(stat = "identity",
+           position = "dodge",
+           size = .1,
+           color = "black") +
+  geom_errorbar(aes(ymax = mean_N + sd_N,
+                    ymin = mean_N - sd_N),
+                width = 0.1,
+                size = 0.3,
+                position = position_dodge(width = 0.9)) +
+  labs(x = " ",
+       y = "Mean # of animals \nin replication",
+       fill = "Trajectory") +
+  scale_x_discrete(limits = c("Standard.0.5",
+                              "SESOI.0.5",
+                              "SESOI.1"),
+                   labels = c("Standard",
+                               "SESOI = 0.5",
+                               "SESOI = 1.0")) +
+  scale_fill_manual(limits = c("Standard.0.5",
+                               "SESOI.0.5",
+                               "SESOI.1"),
+                    labels = c("Standard",
+                               "SESOI \n= 0.5",
+                               "SESOI \n= 1.0"),
+                    values = c("#E69F00", "#0072B2", "#adcee6")) +
+  theme_bw() +
+  theme(axis.title.x = element_text(size = 9),
+        axis.title.y = element_text(size = 9),
+        axis.text.x = element_text(size = 8, colour = "black"),
+        # axis.text.x = element_text(size = 8, colour = "black",
+        #                            angle = 45, hjust = 1),
+        axis.text.y = element_text(size = 8, colour = "black"),
+        strip.text.x = element_text(size = 9, colour = "black"),
+        legend.title = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.border = element_rect(colour = "black", 
+                                    fill = NA, size = 0.3),
+        panel.grid.major = element_line(size = 0.25),
+        panel.grid.minor = element_line(size = 0.1),
+        strip.background = element_rect(fill = "white", color = "black", size = 0.3),
+        legend.position = "none")
+
+exploratory_data_sesoi <-
+  exploratory_data_sesoi %>% 
+  filter(SESOI == "1.0") %>% 
+  filter(init_sample_size == 10) %>% 
+  filter(ES_true <= 5)
+
+sesoi_data_rep_selected <-
+  sesoi_data_after_replication %>% 
+  filter(SESOI == 0.5) %>% 
+  filter(init_sample_size == 10) %>% 
+  filter(ES_true <= 5) %>% 
+  filter(p_value <= .05)
+
+sesoi_data_rep_selected_1.0 <-
+  sesoi_data_after_replication %>% 
+  filter(SESOI == 1.0) %>% 
+  filter(init_sample_size == 10) %>% 
+  filter(ES_true <= 5) %>% 
+  filter(p_value <= .05)
+
+sig_data_rep_selected <-
+  standard_data_after_replication %>% 
+  filter(pval_thres == 0.05) %>% 
+  filter(init_sample_size == 10) %>% 
+  filter(ES_true <= 5) %>% 
+  filter(p_value <= .05)
+
+plot_ES_after_replication <-
+ggplot(data = exploratory_data_sesoi) +
+  geom_histogram(aes(x = ES_true),
+                 bins = 90, color = "black", size = 0.1,
+                 fill = "white") +
+  geom_histogram(data = sesoi_data_rep_selected,
+                 aes(x = ES_true), 
+                 bins = 90, color = "black", size = 0.1,
+                 fill = "#0072B2") +
+  geom_histogram(data = sesoi_data_rep_selected_1.0,
+                 aes(x = ES_true), 
+                 bins = 90, color = "black", size = 0.1,
+                 fill = "#adcee6") +
+  geom_histogram(data = sig_data_rep_selected,
+                 aes(x = ES_true), 
+                 bins = 90, color = "black", size = 0.1,
+                 fill = "#E69F00") +
+  labs(x = expression(paste("Underlying effect sizes (Hedges' ", italic("g"), ") ")),
+       y = "Frequency") +
+  # geom_vline(aes(xintercept = 0.5), color = "red", lty = 2) +
+  # geom_vline(aes(xintercept = 1.0), color = "red", lty = 2) +
+  theme_cowplot(line_size = 0.3) +
+  theme(axis.title.x = element_text(size = 9)) +
+  theme(axis.title.y = element_text(size = 9)) +
+  theme(axis.text.x = element_text(size = 8, colour = "black")) +
+  theme(axis.text.y = element_text(size = 8, colour = "black"))
+
+ggdraw(xlim = c(0, 1),
+       ylim = c(0, 1)) +
+  draw_plot(plot_N, 0, 0, .5, .5) +
+  draw_plot(plot_ES_after_replication, .5, 0, .5, .5) +
+  draw_plot_label(c("a", "b"),
+                c(0, .5),
+                c(.5, .5),
+                size = 8.5)
+
+```
+
+
+```{r results2, echo = FALSE, message = FALSE, out.width = '95%', fig.align = 'center', fig.cap = '\\textsf{\\textbf{Outcomes across trajectory.} \\textbf{a}, The positive predictive value across the trajectory is consistently above the prior probability (dotted lines) only in the SESOI trajectory. \\textbf{b}, The negative predictive value ... \\textbf{c}, The false positive rate across the trajectory is consistently lower in the Standard trajectory. \\textbf{d}, The false negative rate across the trajectory varies as a function of trajectory and SESOI.}'}
+
+plot_PPV <-
+  ggplot(data = res_data,
+         aes(x = factor(SESOI),
+             y = PPV,
+             color = factor(trajectory))) +
+  geom_point(size = 1.8) +
+  geom_segment(aes(x = 0.5,
+                   xend = 1.5,
+                   y = prev[1],
+                   yend = prev[1]),
+               color = "black", lty = "dotted", size = 0.8) +
+  geom_segment(aes(x = 1.5,
+                   xend = 2.5,
+                   y = prev[2],
+                   yend = prev[2]),
+               color = "black", lty = "dotted", size = 0.8) +
+  labs(x = "SESOI",
+       y = "Positive predictive value",
+       color = "Trajectory") +
+  scale_color_manual(breaks = c("SESOI",
+                                "Standard"),
+                     labels = c("SESOI", 
+                                "Standard"),
+                     values = c("#0072B2",
+                                "#E69F00")) +
+  theme_bw() +
+  theme(axis.title.x = element_text(size = 9),
+        axis.title.y = element_text(size = 9),
+        axis.text.x = element_text(size = 8, colour = "black"),
+        axis.text.y = element_text(size = 8, colour = "black"),
+        strip.text.x = element_text(size = 9, colour = "black"),
+        legend.title = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.border = element_rect(colour = "black", 
+                                    fill = NA, size = 0.3),
+        panel.grid.major = element_line(size = 0.25),
+        panel.grid.minor = element_line(size = 0.1),
+        strip.background = element_rect(fill = "white", color = "black", size = 0.3),
+        legend.position = "none")
+
+# plot_PPV
+
+plot_NPV <-
+  ggplot(data = res_data,
+         aes(x = factor(SESOI),
+             y = NPV,
+             color = factor(trajectory))) +
+  geom_point(size = 1.8) +
+  labs(x = "SESOI",
+       y = "Negative predictive value",
+       color = "Trajectory") +
+  scale_color_manual(breaks = c("SESOI",
+                                "Standard"),
+                     labels = c("SESOI", 
+                                "Standard"),
+                     values = c("#0072B2",
+                                "#E69F00")) +
+  theme_bw() +
+  theme(axis.title.x = element_text(size = 9),
+        axis.title.y = element_text(size = 9),
+        axis.text.x = element_text(size = 8, colour = "black"),
+        axis.text.y = element_text(size = 8, colour = "black"),
+        strip.text.x = element_text(size = 9, colour = "black"),
+        legend.title = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.border = element_rect(colour = "black", 
+                                    fill = NA, size = 0.3),
+        panel.grid.major = element_line(size = 0.25),
+        panel.grid.minor = element_line(size = 0.1),
+        strip.background = element_rect(fill = "white", color = "black", size = 0.3),
+        legend.position = "none")
+
+# plot_NPV
+
+plot_FPR <-
+  ggplot(data = res_data,
+         aes(x = factor(SESOI),
+             y = FPR,
+             color = factor(trajectory))) +
+  geom_point(size = 1.8) +
+  labs(x = "SESOI",
+       y = "False positive rate",
+       color = "Trajectory") +
+  scale_color_manual(breaks = c("SESOI",
+                                "Standard"),
+                     labels = c("SESOI",
+                                "Standard"),
+                     values = c("#0072B2",
+                                "#E69F00")) +
+  theme_bw() +
+  theme(axis.title.x = element_text(size = 9),
+        axis.title.y = element_text(size = 9),
+        axis.text.x = element_text(size = 8, colour = "black"),
+        axis.text.y = element_text(size = 8, colour = "black"),
+        strip.text.x = element_text(size = 9, colour = "black"),
+        legend.title = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.border = element_rect(colour = "black", 
+                                    fill = NA, size = 0.3),
+        panel.grid.major = element_line(size = 0.25),
+        panel.grid.minor = element_line(size = 0.1),
+        strip.background = element_rect(fill = "white", color = "black", size = 0.3),
+        legend.position = "none")
+
+# plot_FPR
+
+plot_FNR <-
+  ggplot(data = res_data,
+         aes(x = factor(SESOI),
+             y = FNR,
+             color = factor(trajectory))) +
+  geom_point(size = 1.8) +
+  labs(x = "SESOI",
+       y = "False negative rate",
+       color = "Trajectory") +
+  scale_color_manual(breaks = c("SESOI",
+                                "Standard"),
+                     labels = c("SESOI",
+                                "Standard"),
+                     values = c("#0072B2",
+                                "#E69F00")) +
+  theme_bw() +
+  theme(axis.title.x = element_text(size = 9),
+        axis.title.y = element_text(size = 9),
+        axis.text.x = element_text(size = 8, colour = "black"),
+        axis.text.y = element_text(size = 8, colour = "black"),
+        strip.text.x = element_text(size = 9, colour = "black"),
+        legend.title = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.border = element_rect(colour = "black", 
+                                    fill = NA, size = 0.3),
+        panel.grid.major = element_line(size = 0.25),
+        panel.grid.minor = element_line(size = 0.1),
+        strip.background = element_rect(fill = "white", color = "black", size = 0.3),
+        legend.position = "none")
+
+# plot_FNR
+
+# add column that combines trajectory and SESOI
+res_data$traject_SESOI <-
+  interaction(res_data$trajectory, res_data$SESOI)
+
+plot_data_N <-
+  res_data %>%
+  filter(!(trajectory == "Standard" & SESOI != 0.5))
+
+plot_N <-
+  ggplot(data = plot_data_N,
+         aes(x = factor(traject_SESOI),
+             y = mean_N,
+             fill = factor(traject_SESOI))) +
+  geom_bar(stat = "identity",
+           position = "dodge",
+           size = .1,
+           color = "black") +
+  geom_errorbar(aes(ymax = mean_N + sd_N,
+                    ymin = mean_N - sd_N),
+                width = 0.1,
+                size = 0.3,
+                position = position_dodge(width = 0.9)) +
+  labs(x = " ",
+       y = "Mean # of animals \nin replication",
+       fill = "Trajectory") +
+  scale_x_discrete(limits = c("Standard.0.5",
+                              "SESOI.0.5",
+                              "SESOI.1"),
+                   labels = c("Standard",
+                               "SESOI \n= 0.5",
+                               "SESOI \n= 1.0")) +
+  scale_fill_manual(limits = c("Standard.0.5",
+                               "SESOI.0.5",
+                               "SESOI.1"),
+                    labels = c("Standard",
+                               "SESOI \n= 0.5",
+                               "SESOI \n= 1.0"),
+                    values = c("#E69F00", "#0072B2", "#adcee6")) +
+  theme_bw() +
+  theme(axis.title.x = element_text(size = 9),
+        axis.title.y = element_text(size = 9),
+        axis.text.x = element_text(size = 8, colour = "black"),
+        # axis.text.x = element_text(size = 8, colour = "black",
+        #                            angle = 45, hjust = 1),
+        axis.text.y = element_text(size = 8, colour = "black"),
+        strip.text.x = element_text(size = 9, colour = "black"),
+        legend.title = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.border = element_rect(colour = "black", 
+                                    fill = NA, size = 0.3),
+        panel.grid.major = element_line(size = 0.25),
+        panel.grid.minor = element_line(size = 0.1),
+        strip.background = element_rect(fill = "white", color = "black", size = 0.3),
+        legend.position = "none")
+
+exploratory_data_sesoi <-
+  exploratory_data_sesoi %>% 
+  filter(SESOI == "1.0") %>% 
+  filter(init_sample_size == 10) %>% 
+  filter(ES_true <= 5)
+
+sesoi_data_rep_selected <-
+  sesoi_data_after_replication %>% 
+  filter(SESOI == 0.5) %>% 
+  filter(init_sample_size == 10) %>% 
+  filter(ES_true <= 5) %>% 
+  filter(p_value <= .05)
+
+sesoi_data_rep_selected_1.0 <-
+  sesoi_data_after_replication %>% 
+  filter(SESOI == 1.0) %>% 
+  filter(init_sample_size == 10) %>% 
+  filter(ES_true <= 5) %>% 
+  filter(p_value <= .05)
+
+sig_data_rep_selected <-
+  standard_data_after_replication %>% 
+  filter(pval_thres == 0.05) %>% 
+  filter(init_sample_size == 10) %>% 
+  filter(ES_true <= 5) %>% 
+  filter(p_value <= .05)
+
+plot_ES_after_replication <-
+ggplot(data = exploratory_data_sesoi) +
+  geom_histogram(aes(x = ES_true),
+                 bins = 90, color = "black", size = 0.1,
+                 fill = "white") +
+  geom_histogram(data = sesoi_data_rep_selected,
+                 aes(x = ES_true), 
+                 bins = 90, color = "black", size = 0.1,
+                 fill = "#0072B2") +
+  geom_histogram(data = sesoi_data_rep_selected_1.0,
+                 aes(x = ES_true), 
+                 bins = 90, color = "black", size = 0.1,
+                 fill = "#adcee6") +
+  geom_histogram(data = sig_data_rep_selected,
+                 aes(x = ES_true), 
+                 bins = 90, color = "black", size = 0.1,
+                 fill = "#E69F00") +
+  labs(x = expression(paste("Underlying effect sizes (Hedges' ", italic("g"), ") ")),
+       y = "Frequency") +
+  theme_cowplot(line_size = 0.3) +
+  theme(axis.title.x = element_text(size = 9)) +
+  theme(axis.title.y = element_text(size = 9)) +
+  theme(axis.text.x = element_text(size = 8, colour = "black")) +
+  theme(axis.text.y = element_text(size = 8, colour = "black"))
+
+
+ggdraw(xlim = c(0, 2),
+       ylim = c(0, 2)) +
+  draw_plot(plot_PPV, 0, 1, .9, 1) +
+  draw_plot(plot_NPV, 1, 1, .9, 1) +
+  draw_plot(plot_FPR, 0, 0, .9, 1) +
+  draw_plot(plot_FNR, 1, 0, .9, 1) +
+  draw_plot_label(c("a", "b", "c", "d"),
+                  c(0, 1, 0, 1),
+                  c(2, 2, 1, 1),
+                  size = 9)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
